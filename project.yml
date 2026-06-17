@@ -1,6 +1,6 @@
 name: EmptyStudioAI
 options:
-  bundleIdPrefix: com.emptystudio
+  bundleIdPrefix: com.emptystudio.ai.emy
 targets:
   EmptyStudioAI:
     type: application
