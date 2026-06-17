@@ -16,16 +16,11 @@ jobs:
     - name: Thiết lập phiên bản Xcode ổn định
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    - name: Khởi tạo thư mục đóng gói ứng dụng
-      run: |
-        rm -rf build
-        mkdir -p build/Payload/EmptyStudioAI.app
-
     - name: Kéo mã nguồn thư viện PythonKit về
       run: |
         git clone https://github.com/pvieito/PythonKit.git --depth=1
-        mkdir -p PythonKitSource
-        find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} PythonKitSource/ \;
+        mkdir -p EmptyStudioAI/PythonKitSource
+        find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} EmptyStudioAI/PythonKitSource/ \;
 
     - name: Xóa dòng import PythonKit thừa thãi trong code của App
       run: |
@@ -33,86 +28,161 @@ jobs:
           sed -i '' '/import PythonKit/d' EmptyStudioAI/PythonBridge.swift
         fi
 
-    - name: Biên dịch Tổng lực (Bơm đủ Framework Đồ họa cho iOS)
+    - name: Tạo file cấu hình Xcode Mini (Vượt rào 100%)
       run: |
-        ALL_SWIFT_FILES=$(find EmptyStudioAI PythonKitSource -name "*.swift")
-        SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
-        
-        xcrun -sdk iphoneos swiftc \
-              -target arm64-apple-ios15.0 \
-              -sdk "$SDK_PATH" \
-              -F "$SDK_PATH/System/Library/Frameworks" \
-              -framework SwiftUI \
-              -framework UIKit \
-              -framework Foundation \
-              -Xlinker -rpath -Xlinker /usr/lib/swift \
-              -Xlinker -rpath -Xlinker @executable_path/Frameworks \
-              -O \
-              -parse-as-library \
-              $ALL_SWIFT_FILES \
-              -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
+        mkdir -p EmptyStudioAI.xcodeproj
+        cat > EmptyStudioAI.xcodeproj/project.pbxproj << 'EOF'
+        // !$*UTF8*$!
+        {
+            archiveVersion = 1;
+            classes = {};
+            objectVersion = 56;
+            objects = {
+                /* Begin PBXBuildFile section */
+                0001 /* App.swift */ = {isa = PBXBuildFile; fileRef = 1001; };
+                0002 /* Bridge.swift */ = {isa = PBXBuildFile; fileRef = 1002; };
+                0003 /* View.swift */ = {isa = PBXBuildFile; fileRef = 1003; };
+                /* End PBXBuildFile section */
 
-    - name: Tự cấu trúc file Info.plist chuẩn chỉ (Trùng khớp tên 100%)
-      run: |
-        cat > build/Payload/EmptyStudioAI.app/Info.plist << 'EOF'
-        <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-        <plist version="1.0">
-        <dict>
-            <key>CFBundleDevelopmentRegion</key>
-            <string>en</string>
-            <key>CFBundleExecutable</key>
-            <string>EmptyStudioAI</string>
-            <key>CFBundleIdentifier</key>
-            <string>com.emptystudio.EmptyStudioAI</string>
-            <key>CFBundleInfoDictionaryVersion</key>
-            <string>6.0</string>
-            <key>CFBundleName</key>
-            <string>EmptyStudioAI</string>
-            <key>CFBundlePackageType</key>
-            <string>APPL</string>
-            <key>CFBundleShortVersionString</key>
-            <string>1.0</string>
-            <key>CFBundleSignature</key>
-            <string>????</string>
-            <key>CFBundleVersion</key>
-            <string>1</string>
-            <key>LSRequiresIPhoneOS</key>
-            <true/>
-            <key>MinimumOSVersion</key>
-            <string>15.0</string>
-            <key>UIDeviceFamily</key>
-            <array>
-                <integer>1</integer>
-            </array>
-            <key>UILaunchScreen</key>
-            <dict/>
-            <key>UISupportedInterfaceOrientations</key>
-            <array>
-                <string>UIInterfaceOrientationPortrait</string>
-            </array>
-        </dict>
-        </plist>
+                /* Begin PBXFileReference section */
+                1001 /* App.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStudioAIApp.swift; sourceTree = "<group>"; };
+                1002 /* Bridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PythonBridge.swift; sourceTree = "<group>"; };
+                1003 /* View.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+                1004 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+                /* End PBXFileReference section */
+
+                /* Begin PBXFrameworksBuildPhase section */
+                2001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+                /* End PBXFrameworksBuildPhase section */
+
+                /* Begin PBXGroup section */
+                3001 /* CustomGroup */ = {
+                    isa = PBXGroup;
+                    children = (1001, 1002, 1003, 1004);
+                    path = EmptyStudioAI;
+                    sourceTree = "<group>";
+                };
+                /* End PBXGroup section */
+
+                /* Begin PBXNativeTarget section */
+                4001 /* EmptyStudioAI */ = {
+                    isa = PBXNativeTarget;
+                    buildConfigurationList = 5001 /* Build configuration list for PBXNativeTarget "EmptyStudioAI" */;
+                    buildPhases = (6001 /* Sources */, 2001 /* Frameworks */);
+                    buildRules = ();
+                    dependencies = ();
+                    name = EmptyStudioAI;
+                    productName = EmptyStudioAI;
+                    productReference = 4002 /* EmptyStudioAI.app */;
+                    productType = "com.apple.product-type.application";
+                };
+                /* End PBXNativeTarget section */
+
+                /* Begin PBXProject section */
+                4000 /* Project object */ = {
+                    isa = PBXProject;
+                    attributes = { LastUpgradeCheck = 1540; };
+                    buildConfigurationList = 5000 /* Build configuration list for PBXProject */;
+                    compatibilityVersion = "Xcode 14.0";
+                    developmentRegion = en;
+                    hasScannedForEncodings = 0;
+                    knownRegions = (en, Base);
+                    mainGroup = 3001 /* CustomGroup */;
+                    productRefGroup = 3001;
+                    projectDirPath = "";
+                    projectRoot = "";
+                    targets = (4001 /* EmptyStudioAI */);
+                };
+                /* End PBXProject section */
+
+                /* Begin PBXSourcesBuildPhase section */
+                6001 /* Sources */ = {
+                    isa = PBXSourcesBuildPhase;
+                    buildActionMask = 2147483647;
+                    files = (0001, 0002, 0003);
+                    runOnlyForDeploymentPostprocessing = 0;
+                };
+                /* End PBXSourcesBuildPhase section */
+
+                /* Begin XCBuildConfiguration section */
+                7001 /* Release Project */ = {
+                    isa = XCBuildConfiguration;
+                    buildSettings = {
+                        SDKROOT = iphoneos;
+                        SUPPORTED_PLATFORMS = "iphoneos";
+                    };
+                    name = Release;
+                };
+                7002 /* Release Target */ = {
+                    isa = XCBuildConfiguration;
+                    buildSettings = {
+                        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+                        CODE_SIGNING_ALLOWED = NO;
+                        CODE_SIGNING_REQUIRED = NO;
+                        DONT_RUN_CODE_SIGN_STYLE_BUILD_POST_PROCESS = YES;
+                        GENERATE_INFOPLIST_FILE = YES;
+                        INFOPLIST_KEY_CFBundleIdentifier = "com.emptystudio.EmptyStudioAI";
+                        INFOPLIST_KEY_CFBundleName = "EmptyStudioAI";
+                        INFOPLIST_KEY_Executable_Name = "EmptyStudioAI";
+                        INFOPLIST_KEY_UILaunchScreen_StoryboardName = "";
+                        INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait";
+                        IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+                        LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+                        PRODUCT_BUNDLE_IDENTIFIER = "com.emptystudio.EmptyStudioAI";
+                        PRODUCT_NAME = "EmptyStudioAI";
+                        SWIFT_VERSION = 5.0;
+                        TARGETED_DEVICE_FAMILY = "1";
+                    };
+                    name = Release;
+                };
+                /* End XCBuildConfiguration section */
+
+                /* Begin XCConfigurationList section */
+                5000 /* Build configuration list for PBXProject */ = {
+                    isa = XCConfigurationList;
+                    buildConfigurations = (7001 /* Release Project */);
+                    defaultConfigurationName = Release;
+                    defaultConfigurationIsVisible = 0;
+                };
+                5001 /* Build configuration list for PBXNativeTarget "EmptyStudioAI" */ = {
+                    isa = XCConfigurationList;
+                    buildConfigurations = (7002 /* Release Target */);
+                    defaultConfigurationName = Release;
+                    defaultConfigurationIsVisible = 0;
+                };
+                /* End XCConfigurationList section */
+            };
+            rootObject = 4000 /* Project object */;
+        }
         EOF
 
-    - name: CẤP QUYỀN THỰC THI CHO BINARY (Sửa lỗi "Hộp lạ")
+    - name: Build bằng xcodebuild chính thống (Không ký mã)
       run: |
-        # Ép file thực thi phải có quyền chạy, nếu không iOS sẽ từ chối nhận diện bản chất file
-        chmod +x build/Payload/EmptyStudioAI.app/EmptyStudioAI
+        xcodebuild -project EmptyStudioAI.xcodeproj \
+                   -scheme EmptyStudioAI \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   -destination "generic/platform=iOS" \
+                   CODE_SIGNING_ALLOWED=NO \
+                   CODE_SIGNING_REQUIRED=NO \
+                   clean build
 
-    - name: Nhồi nhét tài nguyên bổ trợ (Python Engine nếu có)
+    - name: Đóng gói IPA chuẩn Apple
       run: |
+        mkdir -p build/Payload
+        # Tìm file .app được tạo ra chính thống từ Xcode rồi vứt vào Payload
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "EmptyStudioAI.app" -type d | head -n 1)
+        cp -R "$APP_PATH" build/Payload/
+        
+        # Nhét nốt file Python Engine nếu có
         if [ -f "EmptyStudioAI/EmyEngine.py" ]; then
             cp "EmptyStudioAI/EmyEngine.py" build/Payload/EmptyStudioAI.app/
         fi
-
-    - name: Nén toàn bộ cấu trúc thành file IPA chuẩn TrollStore
-      run: |
+        
         cd build
-        # Dùng tham số -r để giữ nguyên thuộc tính quyền thực thi (chmod +x) khi nén zip
         zip -r EmptyStudioAI.ipa Payload
 
-    - name: Đẩy file IPA lên mục Artifacts của GitHub
+    - name: Đẩy file IPA lên Artifacts
       uses: actions/upload-artifact@v4
       with:
         name: EmptyStudioAI-trollstore
