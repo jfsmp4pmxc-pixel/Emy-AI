@@ -16,19 +16,25 @@ jobs:
     - name: Thiết lập phiên bản Xcode ổn định
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    - name: Kéo mã nguồn thư viện PythonKit về
+    - name: Kéo mã nguồn và Đổ thẳng PythonKit vào App
       run: |
+        # Tải PythonKit về
         git clone https://github.com/pvieito/PythonKit.git --depth=1
-        mkdir -p EmptyStudioAI/PythonKitSource
-        find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} EmptyStudioAI/PythonKitSource/ \;
-
-    - name: Xóa dòng import PythonKit thừa thãi trong code của App
-      run: |
+        
+        # Tạo một file tạm chứa toàn bộ mã nguồn Swift của PythonKit
+        mkdir -p tmp_pythonkit
+        find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cat {} + >> tmp_pythonkit/CombinedPythonKit.swift
+        
+        # Xóa bỏ dòng import PythonKit thừa thãi trong file Bridge gốc của bạn (nếu có)
         if [ -f "EmptyStudioAI/PythonBridge.swift" ]; then
           sed -i '' '/import PythonKit/d' EmptyStudioAI/PythonBridge.swift
         fi
+        
+        # Nối thẳng toàn bộ mã nguồn PythonKit vào đuôi file PythonBridge.swift để Xcode tự nhận diện nội bộ
+        cat tmp_pythonkit/CombinedPythonKit.swift >> EmptyStudioAI/PythonBridge.swift
+        echo "Đã hợp nhất PythonKit vào làm một với PythonBridge.swift!"
 
-    - name: Tạo file cấu hình Xcode Mini (Vượt rào 100%)
+    - name: Tạo file cấu hình Xcode Mini
       run: |
         mkdir -p EmptyStudioAI.xcodeproj
         cat > EmptyStudioAI.xcodeproj/project.pbxproj << 'EOF'
@@ -116,7 +122,6 @@ jobs:
                 7002 /* Release Target */ = {
                     isa = XCBuildConfiguration;
                     buildSettings = {
-                        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
                         CODE_SIGNING_ALLOWED = NO;
                         CODE_SIGNING_REQUIRED = NO;
                         DONT_RUN_CODE_SIGN_STYLE_BUILD_POST_PROCESS = YES;
@@ -170,11 +175,9 @@ jobs:
     - name: Đóng gói IPA chuẩn Apple
       run: |
         mkdir -p build/Payload
-        # Tìm file .app được tạo ra chính thống từ Xcode rồi vứt vào Payload
         APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "EmptyStudioAI.app" -type d | head -n 1)
         cp -R "$APP_PATH" build/Payload/
         
-        # Nhét nốt file Python Engine nếu có
         if [ -f "EmptyStudioAI/EmyEngine.py" ]; then
             cp "EmptyStudioAI/EmyEngine.py" build/Payload/EmptyStudioAI.app/
         fi
