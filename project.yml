@@ -1,0 +1,12 @@
+name: EmptyStudioAI
+options:
+  bundleIdPrefix: com.emptystudio
+targets:
+  EmptyStudioAI:
+    type: application
+    platform: iOS
+    deploymentTarget: "15.0"
+    sources:
+      - EmptyStudioAI
+    settings:
+      CODE_SIGNING_ALLOWED: NO
