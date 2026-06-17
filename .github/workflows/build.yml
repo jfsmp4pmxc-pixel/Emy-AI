@@ -1,0 +1,39 @@
+name: Build iOS IPA
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout mã nguồn
+      uses: actions/checkout@v4
+
+    - name: Thiết lập phiên bản Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+    - name: Biên dịch ứng dụng (Build App Bundle)
+      run: |
+        xcodebuild -project EmptyStudioAI.xcodeproj \
+                   -scheme EmptyStudioAI \
+                   -configuration Release \
+                   -sdk iphoneos \
+                   CODE_SIGNING_ALLOWED=NO \
+                   clean build
+
+    - name: Đóng gói thành file IPA (TrollStore Compatible)
+      run: |
+        mkdir -p build/Payload
+        cp -r build/Release-iphoneos/EmptyStudioAI.app build/Payload/
+        cd build
+        zip -r EmptyStudioAI.ipa Payload
+        
+    - name: Tải file IPA lên Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: EmptyStudioAI-trollstore
+        path: build/EmptyStudioAI.ipa
