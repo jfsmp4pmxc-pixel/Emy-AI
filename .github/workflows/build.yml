@@ -18,18 +18,25 @@ jobs:
 
     - name: Biên dịch ứng dụng từ Swift Package
       run: |
-        xcodebuild -packagePath . \
-                   -scheme EmptyStudioAI \
+        # Dùng lệnh xcodebuild truyền thống kết hợp ép định dạng build cho Swift Package
+        xcodebuild -scheme EmptyStudioAI \
                    -configuration Release \
                    -sdk iphoneos \
+                   -destination "generic/platform=iOS" \
                    CODE_SIGNING_ALLOWED=NO \
                    clean build
 
     - name: Đóng gói thành file IPA (TrollStore Compatible)
       run: |
         mkdir -p build/Payload
-        # Sao chép gói .app được sinh ra vào thư mục đóng gói
-        cp -r .build/artifacts/ios/release/EmptyStudioAI.app build/Payload/ 2>/dev/null || cp -r $(find .build -name "EmptyStudioAI.app" -type d | head -n 1) build/Payload/
+        # Tìm chính xác file .app vừa được đẻ ra trong thư mục DerivedData mặc định
+        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "EmptyStudioAI.app" -type d | head -n 1)
+        if [ -z "$APP_PATH" ]; then
+          APP_PATH=$(find . -name "EmptyStudioAI.app" -type d | head -n 1)
+        fi
+        
+        echo "Tìm thấy App tại đường dẫn: $APP_PATH"
+        cp -r "$APP_PATH" build/Payload/
         cd build
         zip -r EmptyStudioAI.ipa Payload
         
