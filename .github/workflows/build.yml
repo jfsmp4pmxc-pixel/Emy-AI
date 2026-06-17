@@ -21,45 +21,29 @@ jobs:
         rm -rf build
         mkdir -p build/Payload/EmptyStudioAI.app
 
-    - name: Kéo mã nguồn thư viện PythonKit về build thủ công
+    - name: Kéo mã nguồn thư viện PythonKit về
       run: |
-        # Clone PythonKit từ mã nguồn chính chủ
+        # Tải PythonKit về thư mục tạm
         git clone https://github.com/pvieito/PythonKit.git --depth=1
         
-        # Tìm tất cả file .swift của PythonKit (loại trừ các file test và package setup)
-        PYTHONKIT_FILES=$(find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift")
-        
-        echo "Các file mã nguồn PythonKit tìm thấy:"
-        echo "$PYTHONKIT_FILES"
-        
-        echo "Biên dịch thư viện PythonKit sang dạng Module..."
-        mkdir -p build/Modules
-        
-        # Biên dịch PythonKit thành một mô-đun tĩnh (.a) dành cho iOS arm64
-        xcrun -sdk iphoneos swiftc \
-              -target arm64-apple-ios15.0 \
-              -O \
-              -emit-module -emit-module-path build/Modules/PythonKit.swiftmodule \
-              -module-name PythonKit \
-              -parse-as-library \
-              $PYTHONKIT_FILES \
-              -o build/Modules/libPythonKit.a
+        # Di chuyển toàn bộ lõi mã nguồn của PythonKit vào chung một thư mục tạm để chuẩn bị build gom
+        mkdir -p PythonKitSource
+        find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} PythonKitSource/ \;
+        echo "Đã gom các file PythonKit vào thư mục tạm."
 
-    - name: Biên dịch mã nguồn EmptyStudioAI (Liên kết kèm PythonKit)
+    - name: Biên dịch Tổng lực (Gom App + PythonKit làm một)
       run: |
-        # Tìm tất cả file .swift trong thư mục app của bạn
-        SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
-        echo "Các file mã nguồn app sẽ biên dịch:"
-        echo "$SWIFT_FILES"
+        # Gom tất cả file Swift của App và file Swift của PythonKit lại với nhau
+        ALL_SWIFT_FILES=$(find EmptyStudioAI PythonKitSource -name "*.swift")
         
-        # Biên dịch app chính, liên kết mô-đun PythonKit vừa dựng ở bước trên vào tệp nhị phân chính
+        echo "Tổng số file Swift sẽ biên dịch cùng nhau:"
+        echo "$ALL_SWIFT_FILES"
+        
+        # Biên dịch một phát ra thẳng tệp nhị phân chính cho TrollStore
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
-              -I build/Modules \
-              -L build/Modules \
-              -lPythonKit \
-              $SWIFT_FILES \
+              $ALL_SWIFT_FILES \
               -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
 
     - name: Tự cấu trúc file Info.plist chuẩn cơm mẹ nấu
