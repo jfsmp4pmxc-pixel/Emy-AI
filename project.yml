@@ -1,6 +1,7 @@
 name: EmptyStudioAI
 options:
-  bundleIdPrefix: com.emptystudio.ai.emy
+  bundleIdPrefix: com.emptystudio.emy
+  objectVersion: 56 # Ép XcodeGen sinh file tương thích với Xcode 15
 targets:
   EmptyStudioAI:
     type: application
