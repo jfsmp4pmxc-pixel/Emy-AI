@@ -16,27 +16,65 @@ jobs:
     - name: Thiết lập phiên bản Xcode
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    - name: Biên dịch ứng dụng từ Swift Package
+    - name: Biên dịch trực tiếp không qua Xcode Project
       run: |
-        # Dùng lệnh xcodebuild truyền thống kết hợp ép định dạng build cho Swift Package
-        xcodebuild -scheme EmptyStudioAI \
-                   -configuration Release \
-                   -sdk iphoneos \
-                   -destination "generic/platform=iOS" \
-                   CODE_SIGNING_ALLOWED=NO \
-                   clean build
+        mkdir -p build/Payload/EmptyStudioAI.app
+        
+        # 1. Tìm toàn bộ các file Swift trong thư mục mã nguồn để chuẩn bị gom biên dịch
+        SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
+        echo "Các file Swift được gom để biên dịch:"
+        echo "$SWIFT_FILES"
+        
+        # 2. Biên dịch trực tiếp mã nguồn thành tệp nhị phân chính (Main Executable Binary) cho iOS arm64
+        xcrun -sdk iphoneos swiftc \
+              -target arm64-apple-ios15.0 \
+              -O \
+              $SWIFT_FILES \
+              -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
+              
+        # 3. Tạo file Info.plist chuẩn bằng cơm để iOS và TrollStore nhận diện được cấu trúc App
+        cat > build/Payload/EmptyStudioAI.app/Info.plist << 'EOF'
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+        <plist version="1.0">
+        <dict>
+            <key>CFBundleDevelopmentRegion</key>
+            <string>en</string>
+            <key>CFBundleExecutable</key>
+            <string>EmptyStudioAI</string>
+            <key>CFBundleIdentifier</key>
+            <string>com.emptystudio.EmptyStudioAI</string>
+            <key>CFBundleInfoDictionaryVersion</key>
+            <string>6.0</string>
+            <key>CFBundleName</key>
+            <string>EmptyStudioAI</string>
+            <key>CFBundlePackageType</key>
+            <string>APPL</string>
+            <key>CFBundleShortVersionString</key>
+            <string>1.0</string>
+            <key>CFBundleVersion</key>
+            <string>1</string>
+            <key>LSRequiresIPhoneOS</key>
+            <true/>
+            <key>MinimumOSVersion</key>
+            <string>15.0</string>
+            <key>UIDeviceFamily</key>
+            <array>
+                <integer>1</integer>
+            </array>
+            <key>UILaunchBlankScreen</key>
+            <true/>
+        </dict>
+        </plist>
+        EOF
 
-    - name: Đóng gói thành file IPA (TrollStore Compatible)
-      run: |
-        mkdir -p build/Payload
-        # Tìm chính xác file .app vừa được đẻ ra trong thư mục DerivedData mặc định
-        APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "EmptyStudioAI.app" -type d | head -n 1)
-        if [ -z "$APP_PATH" ]; then
-          APP_PATH=$(find . -name "EmptyStudioAI.app" -type d | head -n 1)
+        # 4. Sao chép file Python EmyEngine.py và các tài nguyên đi kèm vào trong gói App Bundle
+        if [ -f "EmptyStudioAI/EmyEngine.py" ]; then
+            cp "EmptyStudioAI/EmyEngine.py" build/Payload/EmptyStudioAI.app/
         fi
         
-        echo "Tìm thấy App tại đường dẫn: $APP_PATH"
-        cp -r "$APP_PATH" build/Payload/
+    - name: Đóng gói thành file IPA (TrollStore Compatible)
+      run: |
         cd build
         zip -r EmptyStudioAI.ipa Payload
         
