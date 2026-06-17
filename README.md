@@ -1,5 +1,5 @@
 # Emy-AI
-``text
+```text
 EmptyStudioAI/
 ├── .github/
 │   └── workflows/
@@ -10,4 +10,4 @@ EmptyStudioAI/
 │   ├── ContentView.swift      <-- Giao diện GUI (SwiftUI)
 │   └── EmptyStudioAIApp.swift <-- File khởi chạy chính của App iOS
 └── EmptyStudioAI.xcodeproj    <-- Thư mục cấu hình dự án của Xcode
-'''
+```
