@@ -23,38 +23,31 @@ jobs:
 
     - name: Kéo mã nguồn thư viện PythonKit về
       run: |
-        # Tải PythonKit về thư mục tạm
         git clone https://github.com/pvieito/PythonKit.git --depth=1
-        
-        # Di chuyển toàn bộ lõi mã nguồn của PythonKit vào chung một thư mục tạm để chuẩn bị build gom
         mkdir -p PythonKitSource
         find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} PythonKitSource/ \;
         echo "Đã gom các file PythonKit vào thư mục tạm."
 
     - name: Xóa dòng import PythonKit thừa thãi trong code của App
       run: |
-        # Dùng sed xóa bỏ dòng 'import PythonKit' trong file PythonBridge.swift vì đã build chung một cục
         if [ -f "EmptyStudioAI/PythonBridge.swift" ]; then
           sed -i '' '/import PythonKit/d' EmptyStudioAI/PythonBridge.swift
           echo "Đã dọn dẹp dòng import PythonKit trong PythonBridge.swift."
         fi
 
-    - name: Biên dịch Tổng lực (Gom App + PythonKit làm một)
+    - name: Biên dịch Tổng lực (Chế độ Ứng dụng Giao diện Đồ họa)
       run: |
-        # Gom tất cả file Swift của App và file Swift của PythonKit lại với nhau
         ALL_SWIFT_FILES=$(find EmptyStudioAI PythonKitSource -name "*.swift")
         
-        echo "Tổng số file Swift sẽ biên dịch cùng nhau:"
-        echo "$ALL_SWIFT_FILES"
-        
-        # Biên dịch một phát ra thẳng tệp nhị phân chính cho TrollStore
+        # Biên dịch kèm các tham số hệ thống bắt buộc cho ứng dụng UI
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
+              -parse-as-library \
               $ALL_SWIFT_FILES \
               -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
 
-    - name: Tự cấu trúc file Info.plist chuẩn cơm mẹ nấu
+    - name: Tự cấu trúc file Info.plist hoàn chỉnh (Chuẩn Apple App)
       run: |
         cat > build/Payload/EmptyStudioAI.app/Info.plist << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
@@ -75,6 +68,8 @@ jobs:
             <string>APPL</string>
             <key>CFBundleShortVersionString</key>
             <string>1.0</string>
+            <key>CFBundleSignature</key>
+            <string>????</string>
             <key>CFBundleVersion</key>
             <string>1</string>
             <key>LSRequiresIPhoneOS</key>
@@ -85,8 +80,12 @@ jobs:
             <array>
                 <integer>1</integer>
             </array>
-            <key>UILaunchBlankScreen</key>
-            <true/>
+            <key>UILaunchScreen</key>
+            <dict/>
+            <key>UISupportedInterfaceOrientations</key>
+            <array>
+                <string>UIInterfaceOrientationPortrait</string>
+            </array>
         </dict>
         </plist>
         EOF
