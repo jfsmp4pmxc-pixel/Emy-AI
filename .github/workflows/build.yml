@@ -23,17 +23,19 @@ jobs:
 
     - name: Kéo mã nguồn thư viện PythonKit về build thủ công
       run: |
-        # Clone PythonKit chính chủ từ Apple/Swift community về để build chung
+        # Clone PythonKit từ mã nguồn chính chủ
         git clone https://github.com/pvieito/PythonKit.git --depth=1
         
-        # Gom toàn bộ file Swift của thư viện PythonKit lại
-        PYTHONKIT_FILES=$(find PythonKit/Sources/PythonKit -name "*.swift")
+        # Tìm tất cả file .swift của PythonKit (loại trừ các file test và package setup)
+        PYTHONKIT_FILES=$(find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift")
+        
+        echo "Các file mã nguồn PythonKit tìm thấy:"
+        echo "$PYTHONKIT_FILES"
         
         echo "Biên dịch thư viện PythonKit sang dạng Module..."
-        # Tạo thư mục chứa file module tạm thời
         mkdir -p build/Modules
         
-        # Biên dịch PythonKit thành một mô-đun tĩnh cho iOS arm64
+        # Biên dịch PythonKit thành một mô-đun tĩnh (.a) dành cho iOS arm64
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
@@ -45,11 +47,12 @@ jobs:
 
     - name: Biên dịch mã nguồn EmptyStudioAI (Liên kết kèm PythonKit)
       run: |
+        # Tìm tất cả file .swift trong thư mục app của bạn
         SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
         echo "Các file mã nguồn app sẽ biên dịch:"
         echo "$SWIFT_FILES"
         
-        # Biên dịch app chính, chỉ định đường dẫn module bằng -I và thư viện bằng -L
+        # Biên dịch app chính, liên kết mô-đun PythonKit vừa dựng ở bước trên vào tệp nhị phân chính
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
