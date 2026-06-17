@@ -21,17 +21,41 @@ jobs:
         rm -rf build
         mkdir -p build/Payload/EmptyStudioAI.app
 
-    - name: Biên dịch mã nguồn Swift trực tiếp sang tệp nhị phân chính
+    - name: Kéo mã nguồn thư viện PythonKit về build thủ công
       run: |
-        # Tìm tất cả file .swift có trong thư mục EmptyStudioAI
-        SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
-        echo "Các file mã nguồn sẽ biên dịch:"
-        echo "$SWIFT_FILES"
+        # Clone PythonKit chính chủ từ Apple/Swift community về để build chung
+        git clone https://github.com/pvieito/PythonKit.git --depth=1
         
-        # Biên dịch trực tiếp tạo ra tệp thực thi cốt lõi (Main Executable) cho cấu trúc ARM64 iOS
+        # Gom toàn bộ file Swift của thư viện PythonKit lại
+        PYTHONKIT_FILES=$(find PythonKit/Sources/PythonKit -name "*.swift")
+        
+        echo "Biên dịch thư viện PythonKit sang dạng Module..."
+        # Tạo thư mục chứa file module tạm thời
+        mkdir -p build/Modules
+        
+        # Biên dịch PythonKit thành một mô-đun tĩnh cho iOS arm64
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
+              -emit-module -emit-module-path build/Modules/PythonKit.swiftmodule \
+              -module-name PythonKit \
+              -parse-as-library \
+              $PYTHONKIT_FILES \
+              -o build/Modules/libPythonKit.a
+
+    - name: Biên dịch mã nguồn EmptyStudioAI (Liên kết kèm PythonKit)
+      run: |
+        SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
+        echo "Các file mã nguồn app sẽ biên dịch:"
+        echo "$SWIFT_FILES"
+        
+        # Biên dịch app chính, chỉ định đường dẫn module bằng -I và thư viện bằng -L
+        xcrun -sdk iphoneos swiftc \
+              -target arm64-apple-ios15.0 \
+              -O \
+              -I build/Modules \
+              -L build/Modules \
+              -lPythonKit \
               $SWIFT_FILES \
               -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
 
