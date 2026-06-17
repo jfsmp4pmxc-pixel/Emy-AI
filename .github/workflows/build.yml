@@ -13,26 +13,30 @@ jobs:
     - name: Checkout mã nguồn
       uses: actions/checkout@v4
 
-    - name: Thiết lập phiên bản Xcode
+    - name: Thiết lập phiên bản Xcode ổn định
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
-    - name: Biên dịch trực tiếp không qua Xcode Project
+    - name: Khởi tạo thư mục đóng gói ứng dụng
       run: |
+        rm -rf build
         mkdir -p build/Payload/EmptyStudioAI.app
-        
-        # 1. Tìm toàn bộ các file Swift trong thư mục mã nguồn để chuẩn bị gom biên dịch
+
+    - name: Biên dịch mã nguồn Swift trực tiếp sang tệp nhị phân chính
+      run: |
+        # Tìm tất cả file .swift có trong thư mục EmptyStudioAI
         SWIFT_FILES=$(find EmptyStudioAI -name "*.swift")
-        echo "Các file Swift được gom để biên dịch:"
+        echo "Các file mã nguồn sẽ biên dịch:"
         echo "$SWIFT_FILES"
         
-        # 2. Biên dịch trực tiếp mã nguồn thành tệp nhị phân chính (Main Executable Binary) cho iOS arm64
+        # Biên dịch trực tiếp tạo ra tệp thực thi cốt lõi (Main Executable) cho cấu trúc ARM64 iOS
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -O \
               $SWIFT_FILES \
               -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
-              
-        # 3. Tạo file Info.plist chuẩn bằng cơm để iOS và TrollStore nhận diện được cấu trúc App
+
+    - name: Tự cấu trúc file Info.plist chuẩn cơm mẹ nấu
+      run: |
         cat > build/Payload/EmptyStudioAI.app/Info.plist << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
         <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -68,17 +72,20 @@ jobs:
         </plist>
         EOF
 
-        # 4. Sao chép file Python EmyEngine.py và các tài nguyên đi kèm vào trong gói App Bundle
+    - name: Nhồi nhét tài nguyên bổ trợ (Python Engine nếu có)
+      run: |
         if [ -f "EmptyStudioAI/EmyEngine.py" ]; then
             cp "EmptyStudioAI/EmyEngine.py" build/Payload/EmptyStudioAI.app/
+            echo "Đã đóng gói EmyEngine.py vào App Bundle."
         fi
-        
-    - name: Đóng gói thành file IPA (TrollStore Compatible)
+
+    - name: Nén toàn bộ cấu trúc thành file IPA chuẩn TrollStore
       run: |
         cd build
         zip -r EmptyStudioAI.ipa Payload
-        
-    - name: Tải file IPA lên Artifacts
+        echo "Đã tạo xong file IPA thành công!"
+
+    - name: Đẩy file IPA lên mục Artifacts của GitHub
       uses: actions/upload-artifact@v4
       with:
         name: EmptyStudioAI-trollstore
