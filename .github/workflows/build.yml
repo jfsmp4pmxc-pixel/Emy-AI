@@ -31,6 +31,14 @@ jobs:
         find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} PythonKitSource/ \;
         echo "Đã gom các file PythonKit vào thư mục tạm."
 
+    - name: Xóa dòng import PythonKit thừa thãi trong code của App
+      run: |
+        # Dùng sed xóa bỏ dòng 'import PythonKit' trong file PythonBridge.swift vì đã build chung một cục
+        if [ -f "EmptyStudioAI/PythonBridge.swift" ]; then
+          sed -i '' '/import PythonKit/d' EmptyStudioAI/PythonBridge.swift
+          echo "Đã dọn dẹp dòng import PythonKit trong PythonBridge.swift."
+        fi
+
     - name: Biên dịch Tổng lực (Gom App + PythonKit làm một)
       run: |
         # Gom tất cả file Swift của App và file Swift của PythonKit lại với nhau
