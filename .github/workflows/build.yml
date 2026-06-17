@@ -16,6 +16,12 @@ jobs:
     - name: Thiết lập phiên bản Xcode
       run: sudo xcode-select -s /Applications/Xcode_15.4.app
 
+    # CHÈN THÊM BƯỚC NÀY ĐỂ TỰ SINH XCODEPROJ
+    - name: Cài đặt và Sinh Xcode Project bằng XcodeGen
+      run: |
+        brew install xcodegen
+        xcodegen generate
+
     - name: Biên dịch ứng dụng (Build App Bundle)
       run: |
         xcodebuild -project EmptyStudioAI.xcodeproj \
