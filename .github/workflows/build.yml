@@ -26,25 +26,18 @@ jobs:
         git clone https://github.com/pvieito/PythonKit.git --depth=1
         mkdir -p PythonKitSource
         find PythonKit -name "*.swift" ! -path "*Tests*" ! -name "Package.swift" -exec cp {} PythonKitSource/ \;
-        echo "Đã gom các file PythonKit vào thư mục tạm."
 
     - name: Xóa dòng import PythonKit thừa thãi trong code của App
       run: |
         if [ -f "EmptyStudioAI/PythonBridge.swift" ]; then
           sed -i '' '/import PythonKit/d' EmptyStudioAI/PythonBridge.swift
-          echo "Đã dọn dẹp dòng import PythonKit trong PythonBridge.swift."
         fi
 
     - name: Biên dịch Tổng lực (Bơm đủ Framework Đồ họa cho iOS)
       run: |
         ALL_SWIFT_FILES=$(find EmptyStudioAI PythonKitSource -name "*.swift")
-        
-        # Lấy đường dẫn SDK chính thức của iphoneos để ép link framework
         SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
         
-        echo "Biên dịch tích hợp SwiftUI & UIKit..."
-        
-        # Biên dịch một phát ra thẳng tệp nhị phân chính đầy đủ linh hồn đồ họa
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
               -sdk "$SDK_PATH" \
@@ -59,7 +52,7 @@ jobs:
               $ALL_SWIFT_FILES \
               -o build/Payload/EmptyStudioAI.app/EmptyStudioAI
 
-    - name: Tự cấu trúc file Info.plist hoàn chỉnh (Chuẩn Apple App)
+    - name: Tự cấu trúc file Info.plist chuẩn chỉ (Trùng khớp tên 100%)
       run: |
         cat > build/Payload/EmptyStudioAI.app/Info.plist << 'EOF'
         <?xml version="1.0" encoding="UTF-8"?>
@@ -102,18 +95,22 @@ jobs:
         </plist>
         EOF
 
+    - name: CẤP QUYỀN THỰC THI CHO BINARY (Sửa lỗi "Hộp lạ")
+      run: |
+        # Ép file thực thi phải có quyền chạy, nếu không iOS sẽ từ chối nhận diện bản chất file
+        chmod +x build/Payload/EmptyStudioAI.app/EmptyStudioAI
+
     - name: Nhồi nhét tài nguyên bổ trợ (Python Engine nếu có)
       run: |
         if [ -f "EmptyStudioAI/EmyEngine.py" ]; then
             cp "EmptyStudioAI/EmyEngine.py" build/Payload/EmptyStudioAI.app/
-            echo "Đã đóng gói EmyEngine.py vào App Bundle."
         fi
 
     - name: Nén toàn bộ cấu trúc thành file IPA chuẩn TrollStore
       run: |
         cd build
+        # Dùng tham số -r để giữ nguyên thuộc tính quyền thực thi (chmod +x) khi nén zip
         zip -r EmptyStudioAI.ipa Payload
-        echo "Đã tạo xong file IPA thành công!"
 
     - name: Đẩy file IPA lên mục Artifacts của GitHub
       uses: actions/upload-artifact@v4
