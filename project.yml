@@ -2,6 +2,7 @@ name: EmptyStudioAI
 options:
   bundleIdPrefix: com.emptystudio
   objectVersion: 56
+  xcodeVersion: "15.0" # Ép thêm dòng này để xcodegen biết đường xử lý đúng format
 targets:
   EmptyStudioAI:
     type: application
