@@ -19,8 +19,9 @@ jobs:
     - name: Cài đặt và Sinh Xcode Project bằng XcodeGen
       run: |
         brew install xcodegen
-        rm -rf EmptyStudioAI.xcodeproj # Xóa thư mục cũ nếu có để tránh cache format 77
-        xcodegen generate
+        rm -rf EmptyStudioAI.xcodeproj
+        # Ép xcodegen bằng biến môi trường và tham số project.yml
+        xcodegen generate --spec project.yml
 
     - name: Biên dịch ứng dụng (Build App Bundle)
       run: |
