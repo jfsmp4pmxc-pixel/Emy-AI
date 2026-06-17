@@ -35,13 +35,25 @@ jobs:
           echo "Đã dọn dẹp dòng import PythonKit trong PythonBridge.swift."
         fi
 
-    - name: Biên dịch Tổng lực (Chế độ Ứng dụng Giao diện Đồ họa)
+    - name: Biên dịch Tổng lực (Bơm đủ Framework Đồ họa cho iOS)
       run: |
         ALL_SWIFT_FILES=$(find EmptyStudioAI PythonKitSource -name "*.swift")
         
-        # Biên dịch kèm các tham số hệ thống bắt buộc cho ứng dụng UI
+        # Lấy đường dẫn SDK chính thức của iphoneos để ép link framework
+        SDK_PATH=$(xcrun --sdk iphoneos --show-sdk-path)
+        
+        echo "Biên dịch tích hợp SwiftUI & UIKit..."
+        
+        # Biên dịch một phát ra thẳng tệp nhị phân chính đầy đủ linh hồn đồ họa
         xcrun -sdk iphoneos swiftc \
               -target arm64-apple-ios15.0 \
+              -sdk "$SDK_PATH" \
+              -F "$SDK_PATH/System/Library/Frameworks" \
+              -framework SwiftUI \
+              -framework UIKit \
+              -framework Foundation \
+              -Xlinker -rpath -Xlinker /usr/lib/swift \
+              -Xlinker -rpath -Xlinker @executable_path/Frameworks \
               -O \
               -parse-as-library \
               $ALL_SWIFT_FILES \
